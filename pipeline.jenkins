@@ -7,7 +7,8 @@ pipeline {
   stages {
     stage ('Build') {
       steps {
-      sh 'mvn clean install -f MyWebApp/pom.xml'
+        sh "${mvnHome}/bin/mvn clean install -f MyWebApp/pom.xml"
+      
       }
     }
     stage ('Code Quality') {
@@ -25,31 +26,31 @@ pipeline {
     stage ('Nexus Upload') {
       steps {
       nexusArtifactUploader(
-      nexusVersion: 'nexus3',
-      protocol: 'http',
-      nexusUrl: 'nexus_url:8081',
-      groupId: 'myGroupId',
-      version: '1.0-SNAPSHOT',
-      repository: 'maven-snapshots',
-      credentialsId: 'fc0f1694-3036-41fe-b3e3-4c5d96fcfd26',
-      artifacts: [
-      [artifactId: 'MyWebApp',
-      classifier: '',
-      file: 'MyWebApp/target/MyWebApp.war',
-      type: 'war']
+        nexusVersion: 'nexus3',
+        protocol: 'http',
+        nexusUrl: 'ec2-18-210-207-220.compute-1.amazonaws.com:8081/',
+        groupId: 'myGroupId',
+        version: '1.0-SNAPSHOT',
+        repository: 'maven-snapshots',
+        credentialsId: 'b907b0de-87c1-4dd9-bd04-6acf0b5b009d',
+        artifacts: [
+            [artifactId: 'MyWebApp',
+             classifier: '',
+             file: 'MyWebApp/target/MyWebApp.war',
+             type: 'war']
       ])
       }
     }
     stage ('DEV Deploy') {
       steps {
       echo "deploying to DEV Env "
-      deploy adapters: [tomcat9(credentialsId: '268c42f6-f2f5-488f-b2aa-f2374d229b2e', path: '', url: 'http://your_public_dns:8080')], contextPath: null, war: '**/*.war'
+      deploy adapters: [tomcat9(credentialsId: '9ff13a9e-0900-44fb-a791-14e55866b764', path: '', url: 'http://ec2-3-231-81-43.compute-1.amazonaws.com:8080/')], contextPath: null, war: '**/*.war'
       }
     }
     stage ('Slack Notification') {
       steps {
         echo "deployed to DEV Env successfully"
-        slackSend(channel:'your slack channel_name', message: "Job is successful, here is the info - Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+        slackSend(channel:'integration-and-migration', message: "Job is successful, here is the info - Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
       }
     }
     stage ('DEV Approve') {
@@ -63,7 +64,7 @@ pipeline {
      stage ('QA Deploy') {
       steps {
         echo "deploying to QA Env "
-        deploy adapters: [tomcat9(credentialsId: '268c42f6-f2f5-488f-b2aa-f2374d229b2e', path: '', url: 'http://your_dns_name:8080')], contextPath: null, war: '**/*.war'
+        deploy adapters: [tomcat9(credentialsId: '9ff13a9e-0900-44fb-a791-14e55866b764', path: '', url: 'http://ec2-3-231-81-43.compute-1.amazonaws.com:8080/')], contextPath: null, war: '**/*.war'
         }
     }
     stage ('QA Approve') {
@@ -77,8 +78,14 @@ pipeline {
     stage ('Slack Notification for QA Deploy') {
       steps {
         echo "deployed to QA Env successfully"
-        slackSend(channel:'your slack channel_name', message: "Job is successful, here is the info - Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+        slackSend(channel:'integration-and-migration', message: "Job is successful, here is the info - Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
       }
-    }  
+    } 
+    stage ('PROD Deploy') {
+      steps {
+        echo "deploying to PROD Env "
+        deploy adapters: [tomcat9(credentialsId: '9ff13a9e-0900-44fb-a791-14e55866b764', path: '', url: 'http://ec2-3-231-81-43.compute-1.amazonaws.com:8080/')], contextPath: null, war: '**/*.war'
+        }
+    } 
   }
 }
